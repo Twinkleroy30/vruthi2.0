@@ -246,20 +246,25 @@
         </div>
       </div>
 
-      <div class="form-section">
+      <div class="form-section" [class.has-error]="isInterestsInvalid()">
         <h3>Interests</h3>
-        <div class="interests-group">
-          <div *ngFor="let interest of interestOptions" class="interest-option">
-            <input
-              type="checkbox"
-              [id]="interest"
-              [checked]="isInterestSelected(interest)"
-              (change)="onInterestChange($any($event.target).checked, interest)"
-            >
-            <label [for]="interest">{{ interest }}</label>
+        <div class="interests-grid">
+          <div class="interest-option" *ngFor="let interest of interestOptions">
+            <div class="form-check">
+              <input
+                type="checkbox"
+                class="form-check-input"
+                [id]="'interest-' + interest"
+                [checked]="isInterestSelected(interest)"
+                (change)="handleInterestChange($event, interest)"
+              >
+              <label class="form-check-label" [for]="'interest-' + interest">
+                {{ interest }}
+              </label>
+            </div>
           </div>
         </div>
-        <div class="invalid-feedback" *ngIf="hasError('interests', 'required')">
+        <div class="invalid-feedback" *ngIf="isInterestsInvalid()">
           Please select at least one interest
         </div>
       </div>

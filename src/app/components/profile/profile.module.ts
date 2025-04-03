@@ -4,11 +4,13 @@ import { RouterModule } from '@angular/router';
 import { ReactiveFormsModule } from '@angular/forms';
 import { SeekerProfileComponent } from './seeker-profile/seeker-profile.component';
 import { EditProfileComponent } from './edit-profile/edit-profile.component';
+import { ProfileComponent } from './profile.component';
 
 @NgModule({
   declarations: [
     SeekerProfileComponent,
-    EditProfileComponent
+    EditProfileComponent,
+    ProfileComponent
   ],
   imports: [
     CommonModule,

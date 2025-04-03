@@ -27,6 +27,7 @@ export class EditProfileComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.initializeForm();
     this.loadProfile();
   }
 
@@ -67,6 +68,11 @@ export class EditProfileComponent implements OnInit {
           interests: profile.interests
         };
         this.profileForm.patchValue(formData);
+        // Set up interests array
+        this.interestsArray.clear();
+        profile.interests.forEach(interest => {
+          this.interestsArray.push(this.fb.control(interest));
+        });
         this.isLoading = false;
       },
       error: (error) => {
@@ -89,6 +95,11 @@ export class EditProfileComponent implements OnInit {
         this.interestsArray.removeAt(index);
       }
     }
+  }
+
+  handleInterestChange(event: Event, interest: string): void {
+    const checked = (event.target as HTMLInputElement).checked;
+    this.onInterestChange(checked, interest);
   }
 
   isInterestSelected(interest: string): boolean {
@@ -137,5 +148,9 @@ export class EditProfileComponent implements OnInit {
   hasError(controlName: string, errorType: string): boolean {
     const control = this.profileForm.get(controlName);
     return control?.errors?.[errorType] && control.touched;
+  }
+
+  isInterestsInvalid(): boolean {
+    return this.interestsArray.invalid && this.interestsArray.touched;
   }
 } 
