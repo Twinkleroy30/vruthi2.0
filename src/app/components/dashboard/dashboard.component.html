@@ -1,0 +1,63 @@
+<div class="dashboard-container">
+  <nav class="navbar">
+    <div class="navbar-brand">Vruthi Portal</div>
+    <div class="navbar-menu">
+      <span class="welcome-text">Welcome, {{ user?.username || user?.companyName }}</span>
+      <button class="logout-btn" (click)="logout()">Logout</button>
+    </div>
+  </nav>
+
+  <div class="dashboard-content">
+    <div class="dashboard-header">
+      <h1>Dashboard</h1>
+      <p class="user-role">{{ user?.role === 'employee' ? 'Job Seeker' : 'Employer' }}</p>
+    </div>
+
+    <div class="dashboard-grid">
+      <!-- Job Seeker Dashboard -->
+      <ng-container *ngIf="user?.role === 'employee'">
+        <div class="dashboard-card">
+          <h3>Profile Overview</h3>
+          <div class="profile-info">
+            <p><strong>Email:</strong> {{ user?.email }}</p>
+            <p><strong>Experience:</strong> {{ user?.experience }} years</p>
+            <p><strong>Current Location:</strong> {{ user?.currentLocation }}</p>
+            <p><strong>Department:</strong> {{ user?.department }}</p>
+          </div>
+        </div>
+
+        <div class="dashboard-card">
+          <h3>Recent Applications</h3>
+          <p class="empty-state">No recent applications</p>
+        </div>
+
+        <div class="dashboard-card">
+          <h3>Recommended Jobs</h3>
+          <p class="empty-state">No recommendations yet</p>
+        </div>
+      </ng-container>
+
+      <!-- Employer Dashboard -->
+      <ng-container *ngIf="user?.role === 'employer'">
+        <div class="dashboard-card">
+          <h3>Company Overview</h3>
+          <div class="profile-info">
+            <p><strong>Company:</strong> {{ user?.companyName }}</p>
+            <p><strong>Industry:</strong> {{ user?.industry }}</p>
+            <p><strong>Experience:</strong> {{ user?.experience }} years</p>
+          </div>
+        </div>
+
+        <div class="dashboard-card">
+          <h3>Posted Jobs</h3>
+          <p class="empty-state">No jobs posted yet</p>
+        </div>
+
+        <div class="dashboard-card">
+          <h3>Recent Applications</h3>
+          <p class="empty-state">No recent applications</p>
+        </div>
+      </ng-container>
+    </div>
+  </div>
+</div> 

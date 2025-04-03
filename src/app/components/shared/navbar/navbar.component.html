@@ -1,0 +1,48 @@
+<nav class="navbar">
+  <div class="navbar-container">
+    <!-- Logo and Brand -->
+    <div class="navbar-brand">
+      <a routerLink="/" class="logo">JobPortal</a>
+      <button class="menu-toggle" (click)="toggleMenu()" [class.active]="isMenuOpen">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+
+    <!-- Navigation Links -->
+    <div class="nav-links" [class.active]="isMenuOpen">
+      <!-- Public Links -->
+      <a routerLink="/jobs" routerLinkActive="active" class="nav-link">Find Jobs</a>
+      <a routerLink="/companies" routerLinkActive="active" class="nav-link">Companies</a>
+
+      <!-- Links for logged-in users -->
+      <ng-container *ngIf="isLoggedIn">
+        <a routerLink="/dashboard" routerLinkActive="active" class="nav-link">Dashboard</a>
+        
+        <!-- Company specific links -->
+        <ng-container *ngIf="currentUser?.role === 'company'">
+          <a routerLink="/jobs/post" routerLinkActive="active" class="nav-link">Post a Job</a>
+          <a routerLink="/company/profile" routerLinkActive="active" class="nav-link">Company Profile</a>
+        </ng-container>
+
+        <!-- Job seeker specific links -->
+        <ng-container *ngIf="currentUser?.role === 'seeker'">
+          <a routerLink="/applications" routerLinkActive="active" class="nav-link">My Applications</a>
+          <a routerLink="/profile" routerLinkActive="active" class="nav-link">My Profile</a>
+        </ng-container>
+      </ng-container>
+    </div>
+
+    <!-- Auth Buttons -->
+    <div class="auth-buttons" [class.active]="isMenuOpen">
+      <ng-container *ngIf="!isLoggedIn">
+        <a routerLink="/login" class="btn btn-outline">Login</a>
+        <a routerLink="/register" class="btn btn-primary">Register</a>
+      </ng-container>
+      <ng-container *ngIf="isLoggedIn">
+        <button class="btn btn-outline" (click)="logout()">Logout</button>
+      </ng-container>
+    </div>
+  </div>
+</nav>
