@@ -1,86 +1,60 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit } from '@angular/core';
+import { CommonModule, DatePipe } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { MatCardModule } from '@angular/material/card';
+import { MatButtonModule } from '@angular/material/button';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { JobService } from '../../../services/job.service';
 import { Job } from '../../../interfaces/job.interface';
 import { AuthService } from '../../../services/auth.service';
-import { Router } from '@angular/router';
-import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-job-list',
+  standalone: true,
+  imports: [
+    CommonModule,
+    DatePipe,
+    RouterModule,
+    MatCardModule,
+    MatButtonModule,
+    MatProgressSpinnerModule
+  ],
   templateUrl: './job-list.component.html',
-  styleUrls: ['./job-list.component.scss']
+  styleUrls: ['./job-list.component.css']
 })
-export class JobListComponent implements OnInit, OnDestroy {
+export class JobListComponent implements OnInit {
   jobs: Job[] = [];
   isLoading = true;
   errorMessage: string | null = null;
-  isEmployer = false;
-  isLoggedIn: boolean = false;
-  private authSubscription: Subscription;
 
   constructor(
     private jobService: JobService,
-    private authService: AuthService,
-    private router: Router
-  ) {
-    this.authSubscription = this.authService.isAuthenticated$.subscribe(isAuthenticated => {
-      this.isLoggedIn = isAuthenticated;
-    });
-  }
+    public authService: AuthService
+  ) {}
 
   ngOnInit(): void {
     this.loadJobs();
-    this.checkUserRole();
-  }
-
-  ngOnDestroy(): void {
-    if (this.authSubscription) {
-      this.authSubscription.unsubscribe();
-    }
   }
 
   loadJobs(): void {
     this.jobService.getJobs().subscribe({
-      next: (jobs) => {
+      next: (jobs: Job[]) => {
         this.jobs = jobs;
         this.isLoading = false;
       },
-      error: (error) => {
-        this.errorMessage = 'Failed to load jobs. Please try again later.';
+      error: (error: any) => {
+        console.error('Error loading jobs:', error);
+        this.errorMessage = 'Failed to load jobs. Please try again.';
         this.isLoading = false;
       }
     });
   }
 
-  private checkUserRole(): void {
-    this.authService.currentUser$.subscribe(user => {
-      this.isEmployer = user?.role === 'company';
-    });
-  }
-
-  applyForJob(jobId: string): void {
-    if (!this.authService.isAuthenticated()) {
-      this.router.navigate(['/login']);
-      return;
-    }
-
-    // Simulate API call
-    setTimeout(() => {
-      alert('Application submitted successfully!');
-    }, 500);
-  }
-
-  viewJobDetails(jobId: string): void {
-    this.router.navigate(['/jobs', jobId]);
-  }
-
-  createNewJob(): void {
-    this.router.navigate(['/jobs/new']);
-  }
-
   onViewJobClick(): void {
-    this.authService.redirectUrl = this.router.url;
+    // This method is not needed as we're using routerLink in the template
+  }
+
+  get isLoggedIn(): boolean {
+    return this.authService.isAuthenticated;
   }
 }

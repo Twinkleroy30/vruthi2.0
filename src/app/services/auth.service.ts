@@ -12,12 +12,9 @@ import { MockDataService } from './mock-data.service';
   providedIn: 'root'
 })
 export class AuthService {
-  private readonly AUTH_KEY = 'auth_state';
-  private authState = new BehaviorSubject<AuthState>({
-    isAuthenticated: false,
-    user: null,
-    token: null
-  });
+  private apiUrl = environment.apiUrl;
+  private currentUserSubject = new BehaviorSubject<User | null>(null);
+  currentUser$ = this.currentUserSubject.asObservable();
 
   redirectUrl: string = '';
 
@@ -26,51 +23,33 @@ export class AuthService {
     private router: Router,
     private mockDataService: MockDataService
   ) {
-    this.loadAuthState();
+    const storedUser = localStorage.getItem(environment.auth.userKey);
+    if (storedUser) {
+      this.currentUserSubject.next(JSON.parse(storedUser));
+    }
   }
 
-  get currentUser$(): Observable<User | null> {
-    return this.authState.asObservable().pipe(
-      map(state => state.user)
-    );
+  get currentUser(): User | null {
+    return this.currentUserSubject.value;
   }
 
-  get isAuthenticated$(): Observable<boolean> {
-    return this.authState.asObservable().pipe(
-      map(state => state.isAuthenticated)
-    );
+  get isAuthenticated(): boolean {
+    return !!this.currentUser;
   }
 
-  login(credentials: LoginCredentials): Observable<AuthResponse> {
-    return new Observable(observer => {
-      setTimeout(() => {
-        const users = JSON.parse(localStorage.getItem('users') || '[]');
-        const user = users.find((u: any) => u.email === credentials.email && u.password === credentials.password);
-        
-        if (user) {
-          const response: AuthResponse = {
-            token: 'mock-token-' + Date.now(),
-            user: {
-              id: user.id,
-              name: user.name,
-              email: user.email,
-              role: user.role,
-              createdAt: user.createdAt || new Date().toISOString(),
-              updatedAt: user.updatedAt || new Date().toISOString()
-            }
-          };
-          this.handleAuthSuccess(response);
-          observer.next(response);
-          observer.complete();
-        } else {
-          observer.error({ message: 'Invalid email or password' });
-        }
-      }, 1000);
-    });
+  login(email: string, password: string): Observable<User> {
+    return this.http.post<User>(`${this.apiUrl}/auth/login`, { email, password })
+      .pipe(
+        tap(user => {
+          localStorage.setItem(environment.auth.tokenKey, user.token);
+          localStorage.setItem(environment.auth.userKey, JSON.stringify(user));
+          this.currentUserSubject.next(user);
+        })
+      );
   }
 
   registerEmployee(data: EmployeeRegister): Observable<void> {
-    return this.http.post<void>(`${environment.apiUrl}/auth/register/employee`, data)
+    return this.http.post<void>(`${this.apiUrl}/auth/register/employee`, data)
       .pipe(
         catchError(error => {
           console.error('Registration error:', error);
@@ -80,7 +59,7 @@ export class AuthService {
   }
 
   registerEmployer(data: EmployerRegister): Observable<void> {
-    return this.http.post<void>(`${environment.apiUrl}/auth/register/employer`, data)
+    return this.http.post<void>(`${this.apiUrl}/auth/register/employer`, data)
       .pipe(
         catchError(error => {
           console.error('Registration error:', error);
@@ -90,58 +69,56 @@ export class AuthService {
   }
 
   logout(): void {
-    localStorage.removeItem(this.AUTH_KEY);
-    this.authState.next({
-      isAuthenticated: false,
-      user: null,
-      token: null
-    });
+    localStorage.removeItem(environment.auth.tokenKey);
+    localStorage.removeItem(environment.auth.userKey);
+    this.currentUserSubject.next(null);
     this.router.navigate(['/login']);
   }
 
   getToken(): string | null {
-    return this.authState.value.token;
+    return localStorage.getItem(environment.auth.tokenKey);
   }
 
-  isAuthenticated(): boolean {
-    return this.authState.value.isAuthenticated;
+  isJobSeeker(): boolean {
+    return this.currentUser?.role === 'JobSeeker';
   }
 
-  isLoggedIn(): boolean {
-    return this.isAuthenticated();
+  isRecruiter(): boolean {
+    return this.currentUser?.role === 'Recruiter';
   }
 
-  private handleAuthSuccess(response: AuthResponse): void {
-    const authState: AuthState = {
-      isAuthenticated: true,
-      user: response.user,
-      token: response.token
-    };
-    
-    localStorage.setItem(this.AUTH_KEY, JSON.stringify(authState));
-    this.authState.next(authState);
+  register(userData: {
+    email: string;
+    password: string;
+    name: string;
+    role: 'JobSeeker' | 'Recruiter';
+  }): Observable<User> {
+    return this.http.post<User>(`${this.apiUrl}/auth/register`, userData)
+      .pipe(
+        tap(user => {
+          localStorage.setItem(environment.auth.tokenKey, user.token);
+          localStorage.setItem(environment.auth.userKey, JSON.stringify(user));
+          this.currentUserSubject.next(user);
+        })
+      );
   }
 
-  private loadAuthState(): void {
-    const storedState = localStorage.getItem(this.AUTH_KEY);
-    
-    if (storedState) {
-      try {
-        const authState: AuthState = JSON.parse(storedState);
-        this.authState.next(authState);
-      } catch (error) {
-        console.error('Error parsing auth state:', error);
-        this.logout();
-      }
-    }
+  updateProfile(formData: FormData): Observable<User> {
+    return this.http.put<User>(`${this.apiUrl}/profile`, formData)
+      .pipe(
+        tap(user => {
+          localStorage.setItem(environment.auth.userKey, JSON.stringify(user));
+          this.currentUserSubject.next(user);
+        })
+      );
   }
 
   getCurrentUserId(): string | null {
-    return this.authState.value.user?.id?.toString() || null;
+    return this.currentUser?.id?.toString() || null;
   }
 
   getCurrentUser(): User | null {
-    return this.authState.value.user || null;
+    return this.currentUser || null;
   }
 
   getEmployeeProfile(userId: string): Observable<EmployeeRegister> {
@@ -150,31 +127,5 @@ export class AuthService {
 
   updateEmployeeProfile(userId: string, data: Partial<EmployeeRegister>): Observable<EmployeeRegister> {
     return this.mockDataService.updateEmployeeProfile(userId, data);
-  }
-
-  register(userData: any): Observable<any> {
-    return new Observable(observer => {
-      setTimeout(() => {
-        const existingUsers = JSON.parse(localStorage.getItem('users') || '[]');
-        if (existingUsers.some((user: any) => user.email === userData.email)) {
-          observer.error({ message: 'Email already exists' });
-          return;
-        }
-
-        const newUser = {
-          id: Date.now().toString(),
-          ...userData,
-          name: `${userData.firstName} ${userData.lastName}`,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
-
-        existingUsers.push(newUser);
-        localStorage.setItem('users', JSON.stringify(existingUsers));
-
-        observer.next({ message: 'Registration successful' });
-        observer.complete();
-      }, 1000);
-    });
   }
 }
