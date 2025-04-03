@@ -1,82 +1,116 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router } from '@angular/router';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
-import { RegisterTab, EmployeeRegister, EmployerRegister } from '../../../interfaces/register.interface';
 
 @Component({
   selector: 'app-register',
-  templateUrl: './register.component.html',
-  styleUrls: ['./register.component.scss']
-})
-export class RegisterComponent implements OnInit {
-  registerForm: FormGroup;
-  isLoading = false;
-  errorMessage = '';
-  successMessage = '';
-
-  readonly interestOptions = ['IOT', 'AI', 'ML', 'Web Development'];
-  readonly departmentOptions = ['IT', 'Services', 'Others'];
-  readonly maritalStatusOptions = ['Single', 'Married', 'Divorced', 'Widowed'];
-  readonly genderOptions = ['Male', 'Female', 'Other'];
-
-  constructor(
-    private fb: FormBuilder,
-    private authService: AuthService,
-    private router: Router
-  ) {
-    this.registerForm = this.fb.group({
-      firstName: ['', [Validators.required, Validators.minLength(2)]],
-      lastName: ['', [Validators.required, Validators.minLength(2)]],
-      email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]],
-      confirmPassword: ['', [Validators.required]],
-      role: ['jobseeker', [Validators.required]]
-    }, { validators: this.passwordMatchValidator });
-  }
-
-  ngOnInit(): void {
-    if (this.authService.isLoggedIn()) {
-      this.router.navigate(['/']);
+  standalone: true,
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink],
+  template: `
+    <div class="container mt-5">
+      <div class="row justify-content-center">
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="text-center">Register</h3>
+            </div>
+            <div class="card-body">
+              <form (ngSubmit)="onSubmit()" #registerForm="ngForm">
+                <div class="form-group mb-3">
+                  <label for="name">Full Name</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="name"
+                    name="name"
+                    [(ngModel)]="name"
+                    required
+                  />
+                </div>
+                <div class="form-group mb-3">
+                  <label for="email">Email</label>
+                  <input
+                    type="email"
+                    class="form-control"
+                    id="email"
+                    name="email"
+                    [(ngModel)]="email"
+                    required
+                    email
+                  />
+                </div>
+                <div class="form-group mb-3">
+                  <label for="password">Password</label>
+                  <input
+                    type="password"
+                    class="form-control"
+                    id="password"
+                    name="password"
+                    [(ngModel)]="password"
+                    required
+                    minlength="6"
+                  />
+                </div>
+                <div class="form-group mb-3">
+                  <label for="role">Role</label>
+                  <select
+                    class="form-control"
+                    id="role"
+                    name="role"
+                    [(ngModel)]="role"
+                    required
+                  >
+                    <option value="jobseeker">Job Seeker</option>
+                    <option value="recruiter">Recruiter</option>
+                  </select>
+                </div>
+                <div class="form-group text-center">
+                  <button type="submit" class="btn btn-primary" [disabled]="!registerForm.form.valid">
+                    Register
+                  </button>
+                </div>
+                <div class="text-center mt-3">
+                  <p>Already have an account? <a routerLink="/login">Login here</a></p>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `,
+  styles: [`
+    .card {
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     }
-  }
+    .card-header {
+      background-color: #f8f9fa;
+    }
+  `]
+})
+export class RegisterComponent {
+  name = '';
+  email = '';
+  password = '';
+  role = 'jobseeker';
 
-  get firstName() { return this.registerForm.get('firstName')!; }
-  get lastName() { return this.registerForm.get('lastName')!; }
-  get email() { return this.registerForm.get('email')!; }
-  get password() { return this.registerForm.get('password')!; }
-  get confirmPassword() { return this.registerForm.get('confirmPassword')!; }
-  get role() { return this.registerForm.get('role'); }
-
-  passwordMatchValidator(g: FormGroup) {
-    return g.get('password')?.value === g.get('confirmPassword')?.value
-      ? null
-      : { mismatch: true };
-  }
+  constructor(private authService: AuthService) {}
 
   onSubmit(): void {
-    if (this.registerForm.invalid) {
-      return;
-    }
-
-    this.isLoading = true;
-    this.errorMessage = '';
-    this.successMessage = '';
-
-    const { firstName, lastName, email, password, role } = this.registerForm.value;
-
-    this.authService.register({ firstName, lastName, email, password, role }).subscribe({
-      next: (response) => {
-        this.isLoading = false;
-        this.successMessage = 'Registration successful! Redirecting to login...';
-        setTimeout(() => {
-          this.router.navigate(['/login']);
-        }, 2000);
+    this.authService.register({
+      name: this.name,
+      email: this.email,
+      password: this.password,
+      role: this.role
+    }).subscribe({
+      next: () => {
+        // Navigation will be handled by the auth service
       },
       error: (error) => {
-        this.isLoading = false;
-        this.errorMessage = error.error?.message || 'Registration failed. Please try again.';
+        console.error('Registration failed:', error);
+        // Handle error (show message to user)
       }
     });
   }

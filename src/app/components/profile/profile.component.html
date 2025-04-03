@@ -1,1 +1,17 @@
-<p>profile works!</p>
+<div class="profile-container">
+  <div class="profile-header">
+    <h1>Profile Dashboard</h1>
+  </div>
+
+  <div class="dashboard-content">
+    <!-- Job Seeker Dashboard -->
+    <div *ngIf="userType === 'jobSeeker'" class="dashboard-section">
+      <app-job-seeker-dashboard></app-job-seeker-dashboard>
+    </div>
+
+    <!-- Recruiter Dashboard -->
+    <div *ngIf="userType === 'recruiter'" class="dashboard-section">
+      <app-recruiter-dashboard></app-recruiter-dashboard>
+    </div>
+  </div>
+</div>

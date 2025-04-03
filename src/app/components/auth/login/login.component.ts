@@ -1,61 +1,84 @@
-import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
-import { LoginCredentials } from '../../../interfaces/auth.interface';
 
 @Component({
   selector: 'app-login',
-  templateUrl: './login.component.html',
-  styleUrls: ['./login.component.scss']
+  standalone: true,
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink],
+  template: `
+    <div class="container mt-5">
+      <div class="row justify-content-center">
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="text-center">Login</h3>
+            </div>
+            <div class="card-body">
+              <form (ngSubmit)="onSubmit()" #loginForm="ngForm">
+                <div class="form-group mb-3">
+                  <label for="email">Email</label>
+                  <input
+                    type="email"
+                    class="form-control"
+                    id="email"
+                    name="email"
+                    [(ngModel)]="email"
+                    required
+                    email
+                  />
+                </div>
+                <div class="form-group mb-3">
+                  <label for="password">Password</label>
+                  <input
+                    type="password"
+                    class="form-control"
+                    id="password"
+                    name="password"
+                    [(ngModel)]="password"
+                    required
+                  />
+                </div>
+                <div class="form-group text-center">
+                  <button type="submit" class="btn btn-primary" [disabled]="!loginForm.form.valid">
+                    Login
+                  </button>
+                </div>
+                <div class="text-center mt-3">
+                  <p>Don't have an account? <a routerLink="/register">Register here</a></p>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `,
+  styles: [`
+    .card {
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .card-header {
+      background-color: #f8f9fa;
+    }
+  `]
 })
-export class LoginComponent implements OnInit {
-  loginForm: FormGroup;
-  isLoading = false;
-  errorMessage = '';
+export class LoginComponent {
+  email = '';
+  password = '';
 
-  constructor(
-    private fb: FormBuilder,
-    private authService: AuthService,
-    private router: Router
-  ) {
-    this.loginForm = this.fb.group({
-      email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required]]
-    });
-  }
+  constructor(private authService: AuthService) {}
 
-  ngOnInit(): void {
-    if (this.authService.isLoggedIn()) {
-      this.router.navigate(['/']);
-    }
-  }
-
-  get email() { return this.loginForm.get('email')!; }
-  get password() { return this.loginForm.get('password')!; }
-
-  hasError(control: string, error: string): boolean {
-    const formControl = this.loginForm.get(control);
-    return formControl ? formControl.hasError(error) && formControl.touched : false;
-  }
-
-  onSubmit() {
-    if (this.loginForm.invalid) {
-      return;
-    }
-
-    this.isLoading = true;
-    this.errorMessage = '';
-
-    const { email, password } = this.loginForm.value;
-
-    this.authService.login({ email, password }).subscribe({
+  onSubmit(): void {
+    this.authService.login(this.email, this.password).subscribe({
       next: () => {
-        this.router.navigate(['/']);
+        // Navigation will be handled by the auth service
       },
       error: (error) => {
-        this.errorMessage = error.error?.message || 'Invalid email or password';
-        this.isLoading = false;
+        console.error('Login failed:', error);
+        // Handle error (show message to user)
       }
     });
   }
