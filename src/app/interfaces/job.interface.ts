@@ -1,5 +1,5 @@
 export interface Job {
-  id: string;
+  id: number;
   title: string;
   company: string;
   location: string;
@@ -9,4 +9,10 @@ export interface Job {
   salary: string;
   postedDate: Date;
   deadline: Date;
+  status: 'Active' | 'Closed';
+  applications?: JobApplication[];
+  recruiterId: number;
+  applicationStatus?: string;  // For job seeker view
+  appliedDate?: Date;         // For job seeker view
+  applicationsCount: number; // For recruiter view
 } 
